@@ -52,7 +52,7 @@ class Guide
 			keyword = args.shift
 			find(keyword)
 		when "list"
-			list
+			list(args)
 		when "add"
 			add
 		when "quit"
@@ -79,10 +79,24 @@ class Guide
 		end
 	end
 
-	def list
+	def list(args=[])
+		sort_order = args.shift
+		sort_order = args.shift if sort_order == "by"
+		sort_order = "name" unless ["name","cuisine","price"].include? sort_order
 		output_action_header("Listing Restaurants")
 		restaurants = Restaurant.saved_restaurants
+		restaurants.sort! do |r1, r2|
+			case sort_order
+			when "name"
+				r1.name.downcase <=> r2.name.downcase
+			when "cuisine"
+				r1.cuisine.downcase <=> r2.cuisine.downcase
+			when "price"
+				r1.price.to_i <=> r2.price.to_i
+			end
+		end
 		output_restaurant_table(restaurants)
+		puts "Sort using: 'list cuisine' or 'list by cuisine'\n\n"
 		
 	end
 
