@@ -1,4 +1,5 @@
 require "restaurant"
+require "support/string_extend"
 
 class Guide
 	
@@ -27,8 +28,8 @@ class Guide
 		# action loop
 		result = nil
 		until result == :quit
-			action = get_action
-			result = do_action(action)
+			action, args = get_action
+			result = do_action(action, args)
 		end
 		conclusion
 	end
@@ -39,15 +40,17 @@ class Guide
 			puts "Actions: #{Guide::Config.actions.join(', ')}\n" if action
 			print "> "
 			user_response = gets.chomp
-			action = user_response.downcase.strip
+			args = user_response.downcase.strip.split(" ")
+			action = args.shift
 		end	
-		return action
+		return action, args
 	end
 
-	def do_action(action)
+	def do_action(action, args=[])
 		case action
 		when "find"
-			puts "Finding.."
+			keyword = args.shift
+			find(keyword)
 		when "list"
 			list
 		when "add"
@@ -60,17 +63,31 @@ class Guide
 		end
 	end
 
-
-	def list
-		puts "Listing Restaurants\n\n".upcase
-		restaurants = Restaurant.saved_restaurants
-		restaurants.each do |rest|
-			puts rest.name + " | " + rest.cuisine + " | " + rest.price
+	def find(keyword="")
+		output_action_header("Find a Restaurant")
+		if keyword
+			restaurants = Restaurant.saved_restaurants
+			found = restaurants.select do |rest|
+				rest.name.downcase.include?(keyword.downcase) ||
+				rest.cuisine.downcase.include?(keyword.downcase) || 
+				rest.price.to_i <= keyword.to_i
+			end
+			output_restaurant_table(found)
+		else
+			puts "Find using a key phrase to search the restaurant list."
+			puts "Examples: 'Find Mirchi', 'Find Indian', 'Find ind'\n\n"
 		end
 	end
 
+	def list
+		output_action_header("Listing Restaurants")
+		restaurants = Restaurant.saved_restaurants
+		output_restaurant_table(restaurants)
+		
+	end
+
 	def add
-		puts "Add a Restaurant\n\n".upcase
+		output_action_header("Add a Restaurant")
 		restaurant = Restaurant.build_using_questions
 		if restaurant.save
 			puts "\n\nRestaurant Added!\n\n"
@@ -86,5 +103,26 @@ class Guide
 
 	def conclusion
 		puts "\n<<<<< Goodbye and Bon Appetit! >>>>>\n\n"
+	end
+
+	private
+
+	def output_restaurant_table(restaurants)
+		print " Name".ljust(30)
+		print " Cuisine".ljust(20)
+		print "  Price".ljust(6) +"\n"
+		puts "-"*60
+		restaurants.each do |rest|
+			line = " " << rest.name.titleize.ljust(30)
+			line << " " + rest.cuisine.titleize.ljust(20)
+			line << " " + rest.formatted_price.ljust(6)
+			puts line
+		end
+		puts "No Restaurants Found\n" if restaurants.empty?
+		puts "-"*60
+	end
+
+	def output_action_header text
+		puts "\n\n#{text.upcase.center(60)}\n\n"
 	end
 end

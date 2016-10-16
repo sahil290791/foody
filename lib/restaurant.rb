@@ -1,8 +1,13 @@
+require "support/number_helper"
 class Restaurant
+	include NumberHelper
 
 	attr_accessor :name, :cuisine, :price
 	@@filepath = nil
 
+	def formatted_price
+		number_to_currency(@price,{unit: "Rs "})
+	end
 
 	def initialize(args={})
 		@name    = args[:name]    || "" 
